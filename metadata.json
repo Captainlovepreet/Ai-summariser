@@ -1,0 +1,6 @@
+{
+  "name": "Aura Summary AI",
+  "description": "Powerful multimodal summarizer for PDFs, YouTube, and Audio using Gemini AI. Chat with your documents and get instant insights.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

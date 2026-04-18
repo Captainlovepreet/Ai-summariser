@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  
+  --color-bg: #F8F9FA;
+  --color-sidebar-bg: #FFFFFF;
+  --color-text-primary: #1A1A1A;
+  --color-text-secondary: #6B7280;
+  --color-accent: #2563EB;
+  --color-border: #E5E7EB;
+}
+
+@layer base {
+  body {
+    @apply bg-bg text-text-primary font-sans antialiased;
+  }
+}
+
+.card-shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.markdown-body {
+  @apply text-slate-700 leading-relaxed space-y-4;
+}
+
+.markdown-body h1 { @apply text-2xl font-bold text-text-primary; }
+.markdown-body h2 { @apply text-xl font-bold text-text-primary; }
+.markdown-body h3 { @apply text-lg font-bold text-text-primary; }
+.markdown-body p { @apply my-2; }
+.markdown-body ul { @apply list-disc list-inside space-y-1; }
+.markdown-body ol { @apply list-decimal list-inside space-y-1; }
+.markdown-body code { @apply bg-slate-100 text-accent px-1 rounded font-mono text-sm; }
+.markdown-body blockquote { @apply border-l-4 border-accent pl-4 italic text-slate-500; }
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+}
