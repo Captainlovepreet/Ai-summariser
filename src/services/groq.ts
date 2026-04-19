@@ -6,6 +6,45 @@ const DEFAULT_MODEL_NAME = 'llama-3.3-70b-versatile';
 const FALLBACK_MODELS = ['llama-3.1-8b-instant', 'openai/gpt-oss-20b'];
 const RUNTIME_API_KEY_STORAGE = 'summora_groq_api_key';
 
+// YouTube transcript extraction functions
+async function fetchYouTubeTranscript(videoId: string): Promise<string> {
+  try {
+    // Try to get the transcript using YouTube's timed text API
+    const response = await fetch(`https://www.youtube.com/api/timedtext?lang=en&v=${videoId}&fmt=json3`);
+    
+    if (!response.ok) {
+      throw new Error('No transcript available or video not found');
+    }
+
+    const data = await response.json();
+    
+    if (!data.events || data.events.length === 0) {
+      throw new Error('No transcript data available');
+    }
+
+    // Extract text from events
+    let transcript = '';
+    for (const event of data.events) {
+      if (event.segs && event.segs.length > 0) {
+        for (const seg of event.segs) {
+          if (seg.utf8) {
+            transcript += seg.utf8 + ' ';
+          }
+        }
+      }
+    }
+
+    if (!transcript.trim()) {
+      throw new Error('Failed to extract transcript text');
+    }
+
+    return transcript.trim();
+  } catch (error) {
+    console.error('Error fetching YouTube transcript:', error);
+    throw new Error(`Failed to fetch YouTube transcript: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
 // Initialize PDF.js worker using Vite's URL import
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
@@ -240,7 +279,20 @@ export async function summarizeContent(
   let textContent: string;
 
   if (typeof content === 'string') {
-    textContent = truncateContent(content, 20000);
+    // Check if this is a YouTube URL request
+    const youtubeUrlMatch = content.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (youtubeUrlMatch) {
+      const videoId = youtubeUrlMatch[1];
+      try {
+        textContent = await fetchYouTubeTranscript(videoId);
+        textContent = truncateContent(textContent, 20000);
+      } catch (error) {
+        // If transcript fetch fails, throw a user-friendly error
+        throw new Error('Unable to fetch transcript for this YouTube video. The video may not have captions available, or it may be private/unavailable.');
+      }
+    } else {
+      textContent = truncateContent(content, 20000);
+    }
   } else {
     const mimeType = content.mimeType;
     

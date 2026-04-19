@@ -238,7 +238,7 @@ export default function App() {
         content = rawText;
         sourceLabel = `${rawText.slice(0, 40).trim() || 'Text input'}...`;
       } else if (sourceType === 'youtube') {
-        content = `Summarize the YouTube video at this URL: ${selectedUrl}`;
+        content = selectedUrl;
         sourceLabel = selectedUrl;
       } else if (selectedFile) {
         const base64 = await fileToBase64(selectedFile);
