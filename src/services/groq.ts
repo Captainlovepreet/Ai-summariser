@@ -1,14 +1,14 @@
 import * as pdfjsLib from 'pdfjs-dist';
+import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const DEFAULT_MODEL_NAME = 'llama-3.3-70b-versatile';
 const FALLBACK_MODELS = ['llama-3.1-8b-instant', 'openai/gpt-oss-20b'];
 const RUNTIME_API_KEY_STORAGE = 'summora_groq_api_key';
 
-// Initialize PDF.js worker - use local worker to avoid CORS issues
+// Initialize PDF.js worker using Vite's URL import
 if (typeof window !== 'undefined') {
-  // Point to the worker file in the public folder
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 }
 
 let activeClientApiKey = '';
@@ -131,6 +131,11 @@ function truncateContent(text: string, maxChars: number = 30000): string {
 // Extract text from PDF base64 - much more efficient than sending raw base64
 async function extractTextFromPDF(base64Data: string): Promise<string> {
   try {
+    // Verify we have a valid worker source
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      console.warn('PDF worker not properly initialized, attempting text extraction without worker');
+    }
+
     // Convert base64 to ArrayBuffer
     const binaryString = atob(base64Data);
     const bytes = new Uint8Array(binaryString.length);
@@ -143,18 +148,31 @@ async function extractTextFromPDF(base64Data: string): Promise<string> {
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     let extractedText = '';
 
-    // Extract text from each page
-    for (let pageNum = 1; pageNum <= Math.min(pdf.numPages, 50); pageNum++) {
-      const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items.map((item: any) => item.str).join(' ');
-      extractedText += pageText + '\n';
+    // Extract text from each page (max 50 pages to prevent excessive processing)
+    const totalPages = Math.min(pdf.numPages, 50);
+    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+      try {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => (typeof item.str === 'string' ? item.str : ''))
+          .join(' ');
+        extractedText += pageText + '\n';
+      } catch (pageError) {
+        console.warn(`Failed to extract text from page ${pageNum}:`, pageError);
+        // Continue with next page even if one fails
+      }
+    }
+
+    if (!extractedText.trim()) {
+      throw new Error('No text could be extracted from PDF. The PDF may be image-based.');
     }
 
     return extractedText.trim();
   } catch (error) {
     console.error('PDF extraction error:', error);
-    throw new Error('Failed to extract text from PDF. Please ensure it is a valid PDF file.');
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to extract text from PDF: ${message}`);
   }
 }
 
