@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Send, MessageSquare, BookOpen, Copy, Check } from 'lucide-react';
-import { chatWithContent } from '../services/gemini';
+import { chatWithContent } from '../services/groq';
 import { cn } from '../lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from './Button';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
 interface Message {
   role: 'user' | 'model';
@@ -95,9 +96,7 @@ export function SummaryResult({ summary, sourceType }: SummaryResultProps) {
           </div>
         </div>
         <div className="flex-1 p-8 overflow-y-auto overflow-x-hidden custom-scrollbar">
-          <div className="markdown-body">
-            <ReactMarkdown>{summary}</ReactMarkdown>
-          </div>
+          <MarkdownRenderer content={summary} className="prose-dark" />
         </div>
         <div className="flex flex-wrap gap-2 border-t border-border bg-muted/40 p-4">
           <span className="rounded-md bg-muted px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -147,7 +146,7 @@ export function SummaryResult({ summary, sourceType }: SummaryResultProps) {
             <div
               key={i}
               className={cn(
-                'flex max-w-[90%] flex-col',
+                'flex max-w-[90%] flex-col gap-2',
                 m.role === 'user' ? 'ml-auto items-end' : 'items-start',
               )}
             >
@@ -155,11 +154,43 @@ export function SummaryResult({ summary, sourceType }: SummaryResultProps) {
                 className={cn(
                   'rounded-2xl p-3.5 text-[13px] leading-relaxed',
                   m.role === 'user'
-                    ? 'rounded-tr-none bg-primary text-primary-foreground'
-                    : 'rounded-tl-none border border-border bg-muted text-foreground',
+                    ? 'rounded-tr-none bg-primary text-primary-foreground prose-invert prose-sm max-w-none'
+                    : 'rounded-tl-none border border-border bg-muted text-foreground prose prose-sm max-w-none',
                 )}
               >
-                {m.content}
+                {m.role === 'user' ? (
+                  m.content
+                ) : (
+                  <div className="prose prose-sm max-w-none text-foreground">
+                    <ReactMarkdown
+                      components={{
+                        p: ({ node, ...props }) => (
+                          <p className="text-[13px] leading-relaxed mb-2 last:mb-0" {...props} />
+                        ),
+                        ul: ({ node, ...props }) => (
+                          <ul className="list-disc list-inside space-y-1 mb-2" {...props} />
+                        ),
+                        ol: ({ node, ...props }) => (
+                          <ol className="list-decimal list-inside space-y-1 mb-2" {...props} />
+                        ),
+                        li: ({ node, ...props }) => (
+                          <li className="text-[13px]" {...props} />
+                        ),
+                        code: ({ node, inline, ...props }: any) => (
+                          <code
+                            className={inline ? "bg-black/20 px-1 rounded text-xs" : "block bg-black/20 p-2 rounded text-xs overflow-x-auto"}
+                            {...props}
+                          />
+                        ),
+                        a: ({ node, ...props }) => (
+                          <a className="text-blue-300 underline hover:text-blue-200" target="_blank" rel="noopener noreferrer" {...props} />
+                        ),
+                      }}
+                    >
+                      {m.content}
+                    </ReactMarkdown>
+                  </div>
+                )}
               </div>
             </div>
           ))}

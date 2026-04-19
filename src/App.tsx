@@ -34,19 +34,19 @@ import { SummaryResult } from './components/SummaryResult';
 import { Button } from './components/Button';
 import { cn } from './lib/utils';
 import {
-  clearRuntimeGeminiApiKey,
-  getGeminiApiKeySource,
-  hasGeminiApiKey,
-  loadRuntimeGeminiApiKey,
-  setRuntimeGeminiApiKey,
+  clearRuntimeGroqApiKey,
+  getGroqApiKeySource,
+  hasGroqApiKey,
+  loadRuntimeGroqApiKey,
+  setRuntimeGroqApiKey,
   summarizeContent,
   SummaryLength,
   SummaryStyle,
-} from './services/gemini';
+} from './services/groq';
 
 type SourceType = 'pdf' | 'audio' | 'youtube' | 'text' | null;
 type WorkspaceView = 'workspace' | 'history';
-type ApiKeySource = ReturnType<typeof getGeminiApiKeySource>;
+type ApiKeySource = ReturnType<typeof getGroqApiKeySource>;
 
 interface HistoryEntry {
   id: number;
@@ -117,15 +117,15 @@ export default function App() {
   const [length, setLength] = useState<SummaryLength>('medium');
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
-  const [hasApiKey, setHasApiKey] = useState(() => hasGeminiApiKey());
-  const [apiKeySource, setApiKeySource] = useState<ApiKeySource>(() => getGeminiApiKeySource());
+  const [hasApiKey, setHasApiKey] = useState(() => hasGroqApiKey());
+  const [apiKeySource, setApiKeySource] = useState<ApiKeySource>(() => getGroqApiKeySource());
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [apiKeyNotice, setApiKeyNotice] = useState<string | null>(null);
 
   const refreshApiKeyStatus = () => {
-    setHasApiKey(hasGeminiApiKey());
-    setApiKeySource(getGeminiApiKeySource());
+    setHasApiKey(hasGroqApiKey());
+    setApiKeySource(getGroqApiKeySource());
   };
 
   useEffect(() => {
@@ -143,7 +143,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const runtimeKey = loadRuntimeGeminiApiKey();
+    const runtimeKey = loadRuntimeGroqApiKey();
     if (runtimeKey) {
       setApiKeyInput(runtimeKey);
     }
@@ -199,11 +199,11 @@ export default function App() {
   const handleSaveApiKey = () => {
     const normalized = apiKeyInput.trim();
     if (!normalized) {
-      setApiKeyNotice('Enter a Gemini API key before saving.');
+      setApiKeyNotice('Enter a Groq API key before saving.');
       return;
     }
 
-    setRuntimeGeminiApiKey(normalized);
+    setRuntimeGroqApiKey(normalized);
     setApiKeyInput(normalized);
     refreshApiKeyStatus();
     setApiKeyNotice('Runtime API key saved in this browser.');
@@ -211,12 +211,12 @@ export default function App() {
   };
 
   const handleClearApiKey = () => {
-    clearRuntimeGeminiApiKey();
+    clearRuntimeGroqApiKey();
     setApiKeyInput('');
     refreshApiKeyStatus();
     setError(null);
 
-    if (getGeminiApiKeySource() === 'environment') {
+    if (getGroqApiKeySource() === 'environment') {
       setApiKeyNotice('Runtime key cleared. Falling back to .env.local key.');
       return;
     }
@@ -407,7 +407,7 @@ export default function App() {
                   <div className="relative">
                     <Input
                       type={showApiKey ? 'text' : 'password'}
-                      placeholder="Paste Gemini API key (AIza...)"
+                      placeholder="Paste Groq API key (gsk_...)"
                       value={apiKeyInput}
                       onChange={(event) => {
                         setApiKeyInput(event.target.value);
@@ -448,7 +448,7 @@ export default function App() {
                           ? apiKeySource === 'runtime'
                             ? 'Using runtime key saved in this browser.'
                             : 'Using environment key from .env.local.'
-                          : 'No Gemini API key configured yet.'}
+                          : 'No Groq API key configured yet.'}
                       </p>
                     </AlertDescription>
                   </Alert>
